@@ -1,0 +1,10 @@
+syntax = "proto2";
+package wibotic_gazebo_plugins_msgs.msgs;
+
+message CoilPositionRequest {
+  required  string  model1              = 1;
+  optional  string  model2              = 2  [default = ""];
+  optional  double  optimality          = 3  [default = 0.0];
+  optional  double  angle_optimality    = 4  [default = 0.0];
+  optional  double  position_optimality = 5  [default = 0.0];
+}
