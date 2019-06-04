@@ -8,8 +8,22 @@ GZ_REGISTER_MODEL_PLUGIN(WiboticCoilPlugin)
 
 typedef wibotic_gazebo_plugins_msgs::msgs::CoilPositionRequest CoilPositionRequest;
 
-static std::vector<physics::ModelPtr> receive_coils;
-static std::vector<physics::ModelPtr> transmit_coils;
+static std::vector<physics::CollisionPtr> receive_coils;
+static std::vector<physics::CollisionPtr> transmit_coils;
+
+const physics::CollisionPtr find_center(const physics::ModelPtr model) {
+  const physics::Link_V& model_links = model->GetLinks();
+  for (const auto& link : model_links) {
+    const physics::Collision_V link_collisions = link->GetCollisions();
+    for (const auto& collision : link_collisions) {
+      const std::string collision_name = collision->GetName();
+      if (collision_name.find("COIL_CENTER") != std::string::npos) {
+        return collision;
+      }
+    }
+  }
+  return nullptr;
+}
 
 /////////////////////////////////////////////////
 WiboticCoilPlugin::WiboticCoilPlugin()
@@ -22,9 +36,10 @@ WiboticCoilPlugin::~WiboticCoilPlugin()
 /////////////////////////////////////////////////
 void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
   model_ptr_ = model;
-  
-  if (model_ptr_->GetChildLink("coil_center") == nullptr) {
-    gzerr << "Plugin requires model have a link coil_center defined.\n";
+  coil_center_ = find_center(model_ptr_);
+    
+  if (coil_center_ == nullptr) {
+    gzerr << "Plugin requires model have a collision COIL_CENTER defined.\n";
     return;
   }
   
@@ -32,10 +47,10 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
     const std::string coil_type = sdf->GetElement("coilType")->Get<std::string>();
     if (!coil_type.compare("receive")) {
       coil_type_ = CoilType::RECEIVE;
-      receive_coils.push_back(model_ptr_);
+      receive_coils.push_back(coil_center_);
     } else if (!coil_type.compare("transmit")) {
       coil_type_ = CoilType::TRANSMIT;
-      transmit_coils.push_back(model_ptr_);
+      transmit_coils.push_back(coil_center_);
     } else {
       gzerr << "coilType not recognized. Must be either \"receive\" or \"transmit\".\n";
       return;
@@ -64,14 +79,10 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
 }
 
 void WiboticCoilPlugin::OnUpdate() {
-  if (!transport_pub_->HasConnections()) {
-    return;
-  }
-  
   CoilPositionRequest request;
   request.set_model1(model_ptr_->GetName());
   
-  const std::vector<physics::ModelPtr>& matching_coils = 
+  const std::vector<physics::CollisionPtr>& matching_coils = 
     (coil_type_ == CoilType::RECEIVE) ? transmit_coils : receive_coils;
 
   // No matching coil in the world, no sense checking positions
@@ -80,13 +91,13 @@ void WiboticCoilPlugin::OnUpdate() {
     return;
   }
   
-  const auto& pose = model_ptr_->GetChildLink("coil_center")->WorldPose();
+  const auto& pose = coil_center_->WorldPose();
   const ignition::math::Vector3<double>& my_rotation = pose.Rot().Euler();
   const ignition::math::Vector3<double> my_position = pose.Pos();
   
   // Check position against every other model that has this plugin
-  for (const auto model : matching_coils) {
-    const auto& other_pose = model->GetChildLink("coil_center")->WorldPose();
+  for (const auto collision : matching_coils) {
+    const auto& other_pose = collision->WorldPose();
     const ignition::math::Vector3<double>& other_rotation = other_pose.Rot().Euler();
     const ignition::math::Vector3<double>& other_position = other_pose.Pos();
     
@@ -130,7 +141,17 @@ void WiboticCoilPlugin::OnUpdate() {
     
     const double optimality = angle_norm * distance_norm;
     
-    request.set_model2(model->GetName());
+    // std::cout << model_ptr_->GetName() << "\n"
+    //       << collision->GetParentModel()->GetName() << "\n"
+    //       << "Angles:\tX: " << angles.X() << "\tY: " << angles.Y() << "\tZ: " << angles.Z() << "\n"
+    //       << "Angle Norm: " << angle_norm << "\n"
+    //       << "My Position:\tX:" << my_position.X() << "\tY: " << my_position.Y() << "\tZ: " << my_position.Z() << "\n"
+    //       << "Other Position:\tX:" << other_position.X() << "\tY: " << other_position.Y() << "\tZ: " << other_position.Z() << "\n"
+    //       << "Distance Apart:\tX: " << positions.X() << "\tY: " << positions.Y() << "\tZ: " << positions.Z() << "\n"
+    //       << "Distance Norm: " << distance_norm << "\n"
+    //       << "Optimality: " << optimality << "\n\n";
+    
+    request.set_model2(collision->GetParentModel()->GetName());
     request.set_optimality(optimality);
     request.set_angle_optimality(angle_norm);
     request.set_position_optimality(distance_norm);

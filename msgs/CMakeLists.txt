@@ -11,7 +11,6 @@ set (msgs
   coil_position.proto
   ${PROTOBUF_IMPORT_DIRS}/time.proto
   ${PROTOBUF_IMPORT_DIRS}/header.proto
-  ${PROTOBUF_IMPORT_DIRS}/vector3d.proto
 )
 
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${msgs})

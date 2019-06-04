@@ -27,7 +27,7 @@ class WiboticCoilPlugin : public ModelPlugin {
     };
     
     physics::ModelPtr model_ptr_;
-    physics::WorldPtr world_ptr_;
+    physics::CollisionPtr coil_center_;
     
     event::ConnectionPtr update_connection_;
     
