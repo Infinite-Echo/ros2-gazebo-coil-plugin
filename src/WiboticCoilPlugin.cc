@@ -1,5 +1,6 @@
 #include <wibotic_gazebo_plugins/WiboticCoilPlugin.h>
-#include <msgs/coil_position.pb.h>
+#include <wibotic_gazebo_plugins/VersionShim.h>
+#include <coil_position.pb.h>
 #include <vector>
 #include <cmath>
 
@@ -37,7 +38,7 @@ WiboticCoilPlugin::~WiboticCoilPlugin()
 void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
   model_ptr_ = model;
   coil_center_ = find_center(model_ptr_);
-    
+  
   if (coil_center_ == nullptr) {
     gzerr << "Plugin requires model have a collision COIL_CENTER defined.\n";
     return;
@@ -92,14 +93,14 @@ void WiboticCoilPlugin::OnUpdate() {
   }
   
   const auto& pose = coil_center_->WorldPose();
-  const ignition::math::Vector3<double>& my_rotation = pose.Rot().Euler();
-  const ignition::math::Vector3<double> my_position = pose.Pos();
+  const ignition::math::Vector3<double>& my_rotation = pose.GetRotation();
+  const ignition::math::Vector3<double> my_position = pose.GetPosition();
   
   // Check position against every other model that has this plugin
   for (const auto collision : matching_coils) {
     const auto& other_pose = collision->WorldPose();
-    const ignition::math::Vector3<double>& other_rotation = other_pose.Rot().Euler();
-    const ignition::math::Vector3<double>& other_position = other_pose.Pos();
+    const ignition::math::Vector3<double>& other_rotation = other_pose.GetRotation();
+    const ignition::math::Vector3<double>& other_position = other_pose.GetPosition();
     
     ignition::math::Vector3<double> angles = my_rotation - other_rotation;
     if (angles.X() > PI) {

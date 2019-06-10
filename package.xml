@@ -17,6 +17,6 @@
   <depend>roscpp</depend>
 
   <export>
-    <gazebo_ros gazebo_plugin_path="${prefix}/lib"/>
+    <gazebo_ros plugin_path="${prefix}/lib"/>
   </export>
 </package>
