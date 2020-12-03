@@ -15,7 +15,8 @@
   <exec_depend>message_runtime</exec_depend>
   <depend>gazebo_ros</depend>
   <depend>roscpp</depend>
-
+  <depend>std_msgs</depend>
+  
   <export>
     <gazebo_ros plugin_path="${prefix}/lib"/>
   </export>

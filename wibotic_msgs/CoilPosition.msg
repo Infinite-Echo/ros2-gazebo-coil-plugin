@@ -1,0 +1,5 @@
+string model_1
+string model_2
+float32 optimality
+float32 angle_optimality
+float32 position_optimality

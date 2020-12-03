@@ -1,13 +1,11 @@
 #include <wibotic_gazebo_plugins/WiboticCoilPlugin.h>
 #include <wibotic_gazebo_plugins/VersionShim.h>
-#include <coil_position.pb.h>
+#include <wibotic_gazebo_plugins/CoilPosition.h>
 #include <vector>
 #include <cmath>
 
 using namespace gazebo;
 GZ_REGISTER_MODEL_PLUGIN(WiboticCoilPlugin)
-
-typedef wibotic_gazebo_plugins_msgs::msgs::CoilPositionRequest CoilPositionRequest;
 
 static std::vector<physics::CollisionPtr> receive_coils;
 static std::vector<physics::CollisionPtr> transmit_coils;
@@ -61,43 +59,42 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
     return;
   }
   
-  std::string publish_to = "/gazebo/wibotic/coil_position";
+  std::string publish_to = "/wibotic/coil_position";
   if (sdf->HasElement("topic")) {
     publish_to = sdf->GetElement("topic")->Get<std::string>();
   } else {
     gzwarn << "No <topic> specified, publishing to " << publish_to << "\n";
   }
-    
-  // Setup Gazebo transport node
-  transport::NodePtr node(new transport::Node());
-  transport_node_ = node;
-  transport_node_->Init();
-  transport_pub_ = transport_node_->Advertise<CoilPositionRequest>(publish_to);
-    
+  
+  pub_ = nh_.advertise<wibotic_gazebo_plugins::CoilPosition>(publish_to, 10);
+
   update_connection_ = event::Events::ConnectWorldUpdateBegin(
     std::bind(&WiboticCoilPlugin::OnUpdate, this)
   );
 }
 
 void WiboticCoilPlugin::OnUpdate() {
-  CoilPositionRequest request;
-  request.set_model1(model_ptr_->GetName());
+  wibotic_gazebo_plugins::CoilPosition ros_msg;
+  
+  // Default ros message
+  ros_msg.model_1 = model_ptr_->GetName();
+  ros_msg.optimality = 0;
   
   const std::vector<physics::CollisionPtr>& matching_coils = 
     (coil_type_ == CoilType::RECEIVE) ? transmit_coils : receive_coils;
 
   // No matching coil in the world, no sense checking positions
   if (matching_coils.size() < 1) {
-    transport_pub_->Publish(request);
+    pub_.publish(ros_msg);
     return;
   }
   
   const auto& pose = coil_center_->WorldPose();
   const ignition::math::Vector3<double>& my_rotation = pose.GetRotation();
-  const ignition::math::Vector3<double> my_position = pose.GetPosition();
+  const ignition::math::Vector3<double>& my_position = pose.GetPosition();
   
   // Check position against every other model that has this plugin
-  for (const auto collision : matching_coils) {
+  for (const auto& collision : matching_coils) {
     const auto& other_pose = collision->WorldPose();
     const ignition::math::Vector3<double>& other_rotation = other_pose.GetRotation();
     const ignition::math::Vector3<double>& other_position = other_pose.GetPosition();
@@ -142,21 +139,26 @@ void WiboticCoilPlugin::OnUpdate() {
     
     const double optimality = angle_norm * distance_norm;
     
-    // std::cout << model_ptr_->GetName() << "\n"
-    //       << collision->GetParentModel()->GetName() << "\n"
-    //       << "Angles:\tX: " << angles.X() << "\tY: " << angles.Y() << "\tZ: " << angles.Z() << "\n"
-    //       << "Angle Norm: " << angle_norm << "\n"
-    //       << "My Position:\tX:" << my_position.X() << "\tY: " << my_position.Y() << "\tZ: " << my_position.Z() << "\n"
-    //       << "Other Position:\tX:" << other_position.X() << "\tY: " << other_position.Y() << "\tZ: " << other_position.Z() << "\n"
-    //       << "Distance Apart:\tX: " << positions.X() << "\tY: " << positions.Y() << "\tZ: " << positions.Z() << "\n"
-    //       << "Distance Norm: " << distance_norm << "\n"
-    //       << "Optimality: " << optimality << "\n\n";
+    // std::stringstream ss;
+    // ss << model_ptr_->GetName() << "\n"
+    //   << collision->GetParentModel()->GetName() << "\n"
+    //   << "Angles:\tX: " << angles.X() << "\tY: " << angles.Y() << "\tZ: " << angles.Z() << "\n"
+    //   << "Angle Norm: " << angle_norm << "\n"
+    //   << "My Position:\tX:" << my_position.X() << "\tY: " << my_position.Y() << "\tZ: " << my_position.Z() << "\n"
+    //   << "Other Position:\tX:" << other_position.X() << "\tY: " << other_position.Y() << "\tZ: " << other_position.Z() << "\n"
+    //   << "Distance Apart:\tX: " << positions.X() << "\tY: " << positions.Y() << "\tZ: " << positions.Z() << "\n"
+    //   << "Distance: " << distance << "\n"
+    //   << "Distance Norm: " << distance_norm << "\n"
+    //   << "Normed : " << (std::min(MAX_RANGE, distance) / MAX_RANGE) << "\n"
+    //   << "Sin'd: " << std::sin((PI * (std::min(MAX_RANGE, distance) / MAX_RANGE))) << "\n"
+    //   << "Optimality: " << optimality << "\n";
+    // std::cout << ss.str() << std::endl;
     
-    request.set_model2(collision->GetParentModel()->GetName());
-    request.set_optimality(optimality);
-    request.set_angle_optimality(angle_norm);
-    request.set_position_optimality(distance_norm);
-    
-    transport_pub_->Publish(request);
+    ros_msg.model_2 = collision->GetParentModel()->GetName();
+    ros_msg.optimality = optimality;
+    ros_msg.angle_optimality = angle_norm;
+    ros_msg.position_optimality = distance_norm;
+  
+    pub_.publish(ros_msg);
   }
 }

@@ -5,6 +5,9 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <ignition/math/Vector3.hh>
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+
 
 using namespace gazebo;
 
@@ -31,10 +34,10 @@ class WiboticCoilPlugin : public ModelPlugin {
     
     event::ConnectionPtr update_connection_;
     
-    transport::NodePtr transport_node_;
-    transport::PublisherPtr transport_pub_;
-    
     CoilType coil_type_;
+    
+    ros::NodeHandle nh_;
+    ros::Publisher pub_; 
 };
 
 #endif // WIBOTIC_COIL_PLUGIN_HH_
