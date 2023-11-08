@@ -1,12 +1,15 @@
-#ifndef WIBOTIC_COIL_PLUGIN_HH_
-#define WIBOTIC_COIL_PLUGIN_HH_
+#ifndef WIBOTIC_COIL_PLUGIN_HPP_
+#define WIBOTIC_COIL_PLUGIN_HPP_
 
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <ignition/math/Vector3.hh>
-#include <ros/ros.h>
-#include <std_msgs/String.h>
+#include <gazebo/transport/transport.hh>
+#include <gazebo/msgs/msgs.hh>
+#include <gazebo_ros/node.hpp>
+// #include <std_msgs/msg/String.h>
+#include <wibotic_gazebo_plugins/msg/CoilPosition.hpp>
 
 
 using namespace gazebo;
@@ -36,8 +39,8 @@ class WiboticCoilPlugin : public ModelPlugin {
     
     CoilType coil_type_;
     
-    ros::NodeHandle nh_;
-    ros::Publisher pub_; 
+    gazebo_ros::Node::SharedPtr ros2_node;
+    rclcpp::Publisher<wibotic_gazebo_plugins::msg::CoilPosition>::SharedPtr pub_;
 };
 
-#endif // WIBOTIC_COIL_PLUGIN_HH_
+#endif // WIBOTIC_COIL_PLUGIN_HPP_

@@ -1,5 +1,5 @@
-#ifndef VERSION_SHIM_H_
-#define VERSION_SHIM_H_
+#ifndef VERSION_SHIM_HPP_
+#define VERSION_SHIM_HPP_
 
 #if GAZEBO_MAJOR_VERSION < 9
   #define GetRotation() rot.GetAsEuler().Ign()
@@ -10,4 +10,4 @@
   #define GetPosition() Pos()
 #endif
 
-#endif // VERSION_SHIM_H_
+#endif // VERSION_SHIM_HPP_

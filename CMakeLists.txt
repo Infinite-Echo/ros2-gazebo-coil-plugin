@@ -1,46 +1,49 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(wibotic_gazebo_plugins)
 
-add_compile_options(-std=c++11)
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../gazebo_plugins")
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../gazebo_plugins")
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(gazebo_dev REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 set(LIB_NAME wibotic_coil_plugin)
 
-# Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS roscpp gazebo_ros std_msgs genmsg)
-find_package(gazebo REQUIRED)
-find_package(Protobuf REQUIRED)
+# INTERFACES
 
-add_message_files(
-  DIRECTORY
-  wibotic_msgs
-  FILES
-  CoilPosition.msg
+set(msg_files
+  "src/wibotic_interfaces/msg/CoilPosition.msg"
 )
 
-generate_messages(DEPENDENCIES std_msgs)
-
-catkin_package(DEPENDS roscpp gazebo_ros)
-
-include_directories(
-  include
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${Boost_INCLUDE_DIR}
-  ${catkin_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
 )
-link_directories(${GAZEBO_LIBRARY_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(
-  ${LIB_NAME} SHARED
-  src/WiboticCoilPlugin.cc
 
-)
-target_link_libraries(
-  ${LIB_NAME}
-  ${catkin_LIBRARIES}
-  ${GAZEBO_LIBRARIES}
+
+# PLUGIN
+
+include_directories(include)
+
+add_library(${LIB_NAME} SHARED src/WiboticCoilPlugin.cpp)
+ament_target_dependencies(${LIB_NAME}
+  "gazebo_dev"
+  "gazebo_ros"
+  "std_msgs"
+  "rclcpp"
 )
 
 install(TARGETS ${LIB_NAME}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  DESTINATION lib/${PROJECT_NAME}
 )
+
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME} rosidl_typesupport_cpp)
+
+target_link_libraries(${LIB_NAME} "${cpp_typesupport_target}")
+ament_export_dependencies(rosidl_default_runtime)
+ament_package()

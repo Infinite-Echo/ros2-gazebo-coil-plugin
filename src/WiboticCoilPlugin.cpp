@@ -1,6 +1,6 @@
-#include <wibotic_gazebo_plugins/WiboticCoilPlugin.h>
-#include <wibotic_gazebo_plugins/VersionShim.h>
-#include <wibotic_gazebo_plugins/CoilPosition.h>
+#include <wibotic_gazebo_plugins/WiboticCoilPlugin.hpp>
+#include <wibotic_gazebo_plugins/VersionShim.hpp>
+#include <wibotic_gazebo_plugins/msg/CoilPosition.hpp>
 #include <vector>
 #include <cmath>
 
@@ -66,7 +66,7 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
     gzwarn << "No <topic> specified, publishing to " << publish_to << "\n";
   }
   
-  pub_ = nh_.advertise<wibotic_gazebo_plugins::CoilPosition>(publish_to, 10);
+  pub_ = ros2_node.create_publisher<wibotic_gazebo_plugins::msg::CoilPosition>(publish_to, 10);
 
   update_connection_ = event::Events::ConnectWorldUpdateBegin(
     std::bind(&WiboticCoilPlugin::OnUpdate, this)
@@ -74,18 +74,18 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
 }
 
 void WiboticCoilPlugin::OnUpdate() {
-  wibotic_gazebo_plugins::CoilPosition ros_msg;
+  wibotic_gazebo_plugins::msg::CoilPosition ros2_msg;
   
   // Default ros message
-  ros_msg.model_1 = model_ptr_->GetName();
-  ros_msg.optimality = 0;
+  ros2_msg.model_1 = model_ptr_->GetName();
+  ros2_msg.optimality = 0;
   
   const std::vector<physics::CollisionPtr>& matching_coils = 
     (coil_type_ == CoilType::RECEIVE) ? transmit_coils : receive_coils;
 
   // No matching coil in the world, no sense checking positions
   if (matching_coils.size() < 1) {
-    pub_.publish(ros_msg);
+    pub_.publish(ros2_msg);
     return;
   }
   
@@ -154,11 +154,11 @@ void WiboticCoilPlugin::OnUpdate() {
     //   << "Optimality: " << optimality << "\n";
     // std::cout << ss.str() << std::endl;
     
-    ros_msg.model_2 = collision->GetParentModel()->GetName();
-    ros_msg.optimality = optimality;
-    ros_msg.angle_optimality = angle_norm;
-    ros_msg.position_optimality = distance_norm;
+    ros2_msg.model_2 = collision->GetParentModel()->GetName();
+    ros2_msg.optimality = optimality;
+    ros2_msg.angle_optimality = angle_norm;
+    ros2_msg.position_optimality = distance_norm;
   
-    pub_.publish(ros_msg);
+    pub_.publish(ros2_msg);
   }
 }
