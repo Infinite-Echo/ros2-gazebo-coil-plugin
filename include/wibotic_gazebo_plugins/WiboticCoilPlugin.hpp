@@ -9,7 +9,7 @@
 #include <gazebo/msgs/msgs.hh>
 #include <gazebo_ros/node.hpp>
 // #include <std_msgs/msg/String.h>
-#include <wibotic_gazebo_plugins/msg/CoilPosition.hpp>
+#include <wibotic_gazebo_plugins/msg/coil_position.hpp>
 
 
 using namespace gazebo;

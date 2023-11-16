@@ -1,6 +1,6 @@
 #include <wibotic_gazebo_plugins/WiboticCoilPlugin.hpp>
 #include <wibotic_gazebo_plugins/VersionShim.hpp>
-#include <wibotic_gazebo_plugins/msg/CoilPosition.hpp>
+#include <wibotic_gazebo_plugins/msg/coil_position.hpp>
 #include <vector>
 #include <cmath>
 
@@ -66,7 +66,7 @@ void WiboticCoilPlugin::Load(physics::ModelPtr model, sdf::ElementPtr sdf) {
     gzwarn << "No <topic> specified, publishing to " << publish_to << "\n";
   }
   
-  pub_ = ros2_node.create_publisher<wibotic_gazebo_plugins::msg::CoilPosition>(publish_to, 10);
+  pub_ = ros2_node->create_publisher<wibotic_gazebo_plugins::msg::CoilPosition>(publish_to, 10);
 
   update_connection_ = event::Events::ConnectWorldUpdateBegin(
     std::bind(&WiboticCoilPlugin::OnUpdate, this)
@@ -85,7 +85,7 @@ void WiboticCoilPlugin::OnUpdate() {
 
   // No matching coil in the world, no sense checking positions
   if (matching_coils.size() < 1) {
-    pub_.publish(ros2_msg);
+    pub_->publish(ros2_msg);
     return;
   }
   
@@ -159,6 +159,6 @@ void WiboticCoilPlugin::OnUpdate() {
     ros2_msg.angle_optimality = angle_norm;
     ros2_msg.position_optimality = distance_norm;
   
-    pub_.publish(ros2_msg);
+    pub_->publish(ros2_msg);
   }
 }

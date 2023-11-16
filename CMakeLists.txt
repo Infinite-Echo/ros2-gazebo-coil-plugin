@@ -6,26 +6,24 @@ project(wibotic_gazebo_plugins)
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+
+# INTERFACES
+
+set(msg_files
+  "msg/CoilPosition.msg"
+)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+)
+ament_export_dependencies(rosidl_default_runtime)
+
+# PLUGIN
 find_package(gazebo_dev REQUIRED)
 find_package(gazebo_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
 set(LIB_NAME wibotic_coil_plugin)
-
-# INTERFACES
-
-set(msg_files
-  "src/wibotic_interfaces/msg/CoilPosition.msg"
-)
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-)
-
-
-
-# PLUGIN
 
 include_directories(include)
 
@@ -41,9 +39,7 @@ install(TARGETS ${LIB_NAME}
   DESTINATION lib/${PROJECT_NAME}
 )
 
-rosidl_get_typesupport_target(cpp_typesupport_target
-  ${PROJECT_NAME} rosidl_typesupport_cpp)
+rosidl_target_interfaces(${LIB_NAME}
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
-target_link_libraries(${LIB_NAME} "${cpp_typesupport_target}")
-ament_export_dependencies(rosidl_default_runtime)
 ament_package()
