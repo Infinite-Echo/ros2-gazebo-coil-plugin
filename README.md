@@ -1,2 +1,2 @@
 # Gazebo Plugins for WiBotic Systems
-These plugins have been tested with Gazebo 9
+WIP Migration to support ROS2 Humble & Related Gazebo Distros
